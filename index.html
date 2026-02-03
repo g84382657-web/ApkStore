@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Apna Play Store</title>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-storage-compat.js"></script>
+
+    <style>
+        :root { --p: #0b57d0; --bg: #f8f9fa; --inactive: #5f6368; }
+        body { font-family: 'Segoe UI', Roboto, Arial; background: var(--bg); margin: 0; padding-bottom: 80px; }
+        
+        /* Pages */
+        .page { display: none; padding: 15px; animation: fadeIn 0.3s; }
+        .page.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* App Listing */
+        .header { background: white; padding: 15px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .search-bar { background: #eaf1fb; padding: 12px; border-radius: 25px; display: flex; align-items: center; }
+        .search-bar input { border: none; background: transparent; width: 100%; margin-left: 10px; outline: none; }
+        .container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; padding-top: 20px; }
+        .app-card { text-align: center; }
+        .app-icon { width: 65px; height: 65px; background: #0b57d0; color: white; border-radius: 18px; margin: auto; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; }
+        .app-name { font-size: 12px; margin-top: 8px; color: #444; }
+
+        /* Profile & Dev Card */
+        .profile-header { text-align: center; padding: 30px 0; }
+        .avatar { width: 90px; height: 90px; background: #e0e0e0; border-radius: 50%; margin: auto; line-height: 90px; font-size: 45px; }
+        .card { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+
+        /* Bottom Nav - Fixed Logic */
+        .nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; justify-content: space-around; padding: 10px 0; border-top: 1px solid #eee; z-index: 1000; }
+        .nav-item { text-align: center; color: var(--inactive); font-size: 12px; cursor: pointer; transition: 0.2s; flex: 1; }
+        .nav-item i { font-size: 22px; display: block; margin-bottom: 4px; }
+        
+        /* Active Class for Color Change */
+        .nav-item.active { color: var(--p) !important; font-weight: bold; }
+
+        /* Payment Modal */
+        .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:2000; align-items:center; justify-content:center; }
+        .modal-box { background:white; padding:25px; border-radius:25px; width:85%; text-align:center; }
+        .qr-img { width: 220px; height: 220px; margin: 15px 0; border-radius: 10px; }
+        
+        .btn { background: var(--p); color: white; border: none; padding: 14px; border-radius: 12px; width: 100%; font-weight: bold; margin-top: 10px; cursor: pointer; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+    <div id="homePage" class="page active">
+        <div class="header">
+            <div class="search-bar">🔍 <input type="text" placeholder="Search apps & games"></div>
+        </div>
+        <div class="container" id="appGrid"></div>
+    </div>
+
+    <div id="profilePage" class="page">
+        <div class="profile-header">
+            <div class="avatar">👤</div>
+            <h2 id="uIdDisp">7819930087</h2>
+            <p id="uStatus" style="color: #666;">Standard Account</p>
+        </div>
+
+        <div id="devBox" class="card">
+            <h3>Developer Account</h3>
+            <p style="color:#555; font-size:14px;">Publish your own APKs for ₹499 (One-time fee).</p>
+            <button class="btn" id="payBtn" onclick="openPayment()">Activate Now</button>
+        </div>
+
+        <div id="uploadBox" class="card hidden" style="margin-top:20px;">
+            <h3 style="color:var(--p)">🚀 Developer Console</h3>
+            <input type="text" id="apkName" placeholder="App Name" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; margin-bottom:10px; box-sizing:border-box;">
+            <input type="file" id="apkFile" accept=".apk" style="margin-bottom:15px;">
+            <button class="btn" onclick="handleUpload()">Publish APK</button>
+        </div>
+    </div>
+
+    <div id="payModal" class="modal">
+        <div class="modal-box">
+            <h3>Payment Confirmation</h3>
+            <p>Scan QR and send ₹499</p>
+            <img src="https://i.postimg.cc/t4mKTJPf/IMG-20260202-112444.png" class="qr-img" alt="Payment QR">
+            <input type="text" id="utr" placeholder="Enter Transaction ID (UTR)" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; box-sizing:border-box;">
+            <button class="btn" onclick="sendReq()">Submit Request</button>
+            <p onclick="closePayment()" style="color:red; margin-top:15px; font-weight:bold; cursor:pointer;">Cancel</p>
+        </div>
+    </div>
+
+    <div class="nav">
+        <div class="nav-item active" id="nav-games" onclick="showPage('homePage', 'nav-games')">
+            <span>🎮</span><br>Games
+        </div>
+        <div class="nav-item" id="nav-apps" onclick="showPage('homePage', 'nav-apps')">
+            <span>📱</span><br>Apps
+        </div>
+        <div class="nav-item" id="nav-profile" onclick="showPage('profilePage', 'nav-profile')">
+            <span>👤</span><br>Profile
+        </div>
+    </div>
+
+<script>
+    // Firebase Config
+    const firebaseConfig = {
+  apiKey: "AIzaSyBgrbyw1D3acLYqwU0dtFgGpaJtNPWNNZA",
+  authDomain: "apk-d2e60.firebaseapp.com",
+  databaseURL: "https://apk-d2e60-default-rtdb.firebaseio.com",
+  projectId: "apk-d2e60",
+  storageBucket: "apk-d2e60.firebasestorage.app",
+  messagingSenderId: "743284953218",
+  appId: "1:743284953218:web:23f6df76575826b43ca49b",
+  measurementId: "G-VRCL3GHJQN"
+};
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const st = firebase.storage();
+
+    let userPhone = "7819930087"; // Static for testing as per your image
+
+    // PAGE NAVIGATION LOGIC (Fixing the color issue)
+    function showPage(pageId, navId) {
+        // 1. Hide all pages
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        // 2. Show selected page
+        document.getElementById(pageId).classList.add('active');
+
+        // 3. Remove active color from all nav items
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        // 4. Add active color to clicked nav item
+        document.getElementById(navId).classList.add('active');
+    }
+
+    // Load Apps
+    function loadApps() {
+        db.ref('apps/').on('value', (snap) => {
+            const grid = document.getElementById('appGrid');
+            grid.innerHTML = "";
+            snap.forEach((child) => {
+                const app = child.val();
+                grid.innerHTML += `
+                    <div class="app-card" onclick="window.open('${app.downloadUrl}')">
+                        <div class="app-icon">${app.appName.charAt(0)}</div>
+                        <div class="app-name">${app.appName}</div>
+                    </div>`;
+            });
+        });
+    }
+
+    // Check Status
+    function checkStatus() {
+        db.ref('users/' + userPhone).on('value', (snap) => {
+            const data = snap.val();
+            if(data && data.isDeveloper) {
+                document.getElementById('uStatus').innerText = "Verified Developer ✅";
+                document.getElementById('devBox').classList.add('hidden');
+                document.getElementById('uploadBox').classList.remove('hidden');
+            }
+        });
+    }
+
+    function openPayment() { document.getElementById('payModal').style.display = 'flex'; }
+    function closePayment() { document.getElementById('payModal').style.display = 'none'; }
+
+    function sendReq() {
+        const utr = document.getElementById('utr').value;
+        if(!utr) return alert("UTR bharein!");
+        db.ref('paymentRequests/' + userPhone).set({ userId: userPhone, utr: utr, status: 'pending' });
+        db.ref('users/' + userPhone).update({ paymentStatus: 'pending' });
+        alert("Request Sent!"); closePayment();
+    }
+
+    function handleUpload() {
+        const name = document.getElementById('apkName').value;
+        const file = document.getElementById('apkFile').files[0];
+        if(!name || !file) return alert("Pehle file select karein!");
+        const ref = st.ref('apks/' + Date.now() + "_" + file.name);
+        ref.put(file).then(s => s.ref.getDownloadURL()).then(url => {
+            db.ref('apps/').push({ appName: name, downloadUrl: url, developer: userPhone });
+            alert("App Uploaded!");
+        });
+    }
+
+    loadApps();
+    checkStatus();
+</script>
+</body>
+</html>
