@@ -60,18 +60,18 @@
     <div id="loginPage" class="page active-page">
          <h2 style="color:#ffaa00; text-align:center; margin-top:20px;">Welcome to APK Store</h2>
         <div class="form-container">
-            <h2 style="text-align:center; margin-bottom:20px;">WELCOME BACK</h2>
+              <h2>LOGIN</h2>
             <input id="loginEmail" class="form-input" placeholder="Email Address">
             <input id="loginPassword" type="password" class="form-input" placeholder="Password">
             <button class="neon-btn login-btn" style="width:100%" onclick="login()">LOGIN</button>
-            <p style="margin-top:18px; text-align:center; color:#aaa">Don't have an account? <span style="color:#00eeff; cursor:pointer;" onclick="showPage('registerPage')">Sign Up</span></p>
+            <p style="margin-top:18px; text-align:center; color:#aaa">Don't have an account? <span style="color:#00eeff; cursor:pointer;" onclick="showPage('registerPage')">Register</span></p>
         </div>
     </div>
 
     <div id="registerPage" class="page">
          <h2 style="color:#ffaa00; text-align:center; margin-top:20px;">Welcome to APK Store</h2>
         <div class="form-container">
-            <h2 style="text-align:center; margin-bottom:20px;">CREATE ACCOUNT</h2>
+              <h2>REGISTER</h2>
             <input id="registerName" class="form-input" placeholder="Full Name">
             <input id="registerEmail" class="form-input" placeholder="Email Address">
             <input id="registerPassword" type="password" class="form-input" placeholder="Password">
@@ -132,8 +132,9 @@
             <div style="background:white; padding:15px; display:inline-block; border-radius:10px; margin:20px 0;">
                 <img src="https://i.postimg.cc/68njb9ML/qr.png" width="180" alt="QR Code">
             </div>
-            <p style="font-size:14px; margin-bottom:20px; color:#ccc;">Scan & Pay ₹499 to become a Developer.</p>
-            <button class="neon-btn login-btn" style="width:100%" onclick="submitPaymentRequest()">I HAVE PAID - SUBMIT</button>
+                  <h2>BECOME A DEVELOPER</h2>
+                <p>Activate developer account to upload APKs. One-time Payment ₹499 only.</p>
+            <button class="neon-btn login-btn" style="width:100%" onclick="submitPaymentRequest()"> SUBMIT</button>
             <p onclick="showPage('profilePage')" style="margin-top:15px; cursor:pointer; color:#ff5555;">Go Back</p>
         </div>
     </div>
@@ -333,3 +334,4 @@
 </body>
 </html>
   
+
