@@ -1,189 +1,335 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Apna Play Store</title>
-    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-database-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-storage-compat.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>APK Store</title>
+
+    <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore-compat.js"></script>
 
     <style>
-        :root { --p: #0b57d0; --bg: #f8f9fa; --inactive: #5f6368; }
-        body { font-family: 'Segoe UI', Roboto, Arial; background: var(--bg); margin: 0; padding-bottom: 80px; }
-        
-        /* Pages */
-        .page { display: none; padding: 15px; animation: fadeIn 0.3s; }
-        .page.active { display: block; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Arial, sans-serif; }
+        body { background: linear-gradient(135deg, #0f0c29, #302b63, #24243e); color: white; min-height: 100vh; }
+        .container { padding-bottom: 90px; }
+
+        /* HEADER */
+        .header { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 2px solid #00eeff; background: rgba(0,0,0,0.2); }
+        .header h1 { font-size: 22px; color: #00eeff; text-shadow: 0 0 12px #00eeff; }
+        #searchInput { padding: 10px 14px; border-radius: 25px; border: none; outline: none; width: 170px; display: none; background: rgba(255,255,255,0.1); color: white; }
+
+        /* UI ELEMENTS */
+        .page { display: none; padding: 20px; animation: fadeIn 0.4s; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-        /* App Listing */
-        .header { background: white; padding: 15px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .search-bar { background: #eaf1fb; padding: 12px; border-radius: 25px; display: flex; align-items: center; }
-        .search-bar input { border: none; background: transparent; width: 100%; margin-left: 10px; outline: none; }
-        .container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; padding-top: 20px; }
-        .app-card { text-align: center; }
-        .app-icon { width: 65px; height: 65px; background: #0b57d0; color: white; border-radius: 18px; margin: auto; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; }
-        .app-name { font-size: 12px; margin-top: 8px; color: #444; }
-
-        /* Profile & Dev Card */
-        .profile-header { text-align: center; padding: 30px 0; }
-        .avatar { width: 90px; height: 90px; background: #e0e0e0; border-radius: 50%; margin: auto; line-height: 90px; font-size: 45px; }
-        .card { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-
-        /* Bottom Nav - Fixed Logic */
-        .nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; justify-content: space-around; padding: 10px 0; border-top: 1px solid #eee; z-index: 1000; }
-        .nav-item { text-align: center; color: var(--inactive); font-size: 12px; cursor: pointer; transition: 0.2s; flex: 1; }
-        .nav-item i { font-size: 22px; display: block; margin-bottom: 4px; }
+        .active-page { display: block; }
         
-        /* Active Class for Color Change */
-        .nav-item.active { color: var(--p) !important; font-weight: bold; }
-
-        /* Payment Modal */
-        .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:2000; align-items:center; justify-content:center; }
-        .modal-box { background:white; padding:25px; border-radius:25px; width:85%; text-align:center; }
-        .qr-img { width: 220px; height: 220px; margin: 15px 0; border-radius: 10px; }
+        .form-container { background: rgba(255, 255, 255, .07); padding: 30px; border-radius: 18px; max-width: 420px; margin: 40px auto; border: 1px solid rgba(255,255,255,0.1); }
+        .form-input { width: 100%; padding: 14px; margin: 10px 0; border-radius: 12px; border: 2px solid #00eeff; background: rgba(255, 255, 255, .05); color: white; outline: none; }
         
-        .btn { background: var(--p); color: white; border: none; padding: 14px; border-radius: 12px; width: 100%; font-weight: bold; margin-top: 10px; cursor: pointer; }
-        .hidden { display: none; }
+        .neon-btn { background: transparent; border: 2px solid; padding: 14px; border-radius: 30px; cursor: pointer; font-weight: bold; transition: .3s; text-transform: uppercase; }
+        .login-btn { border-color: #00eeff; color: #00eeff; box-shadow: 0 0 8px #00eeff; }
+        .register-btn { border-color: #ff00cc; color: #ff00cc; box-shadow: 0 0 8px #ff00cc; }
+        .nav-btn { border-color: #ffaa00; color: #ffaa00; width: 30%; font-size: 12px; }
+
+        /* APP CARDS */
+        .app-card { background: rgba(255, 255, 255, 0.08); padding: 15px; border-radius: 15px; margin-bottom: 15px; display: flex; align-items: center; gap: 15px; border-left: 5px solid #00eeff; transition: 0.3s; }
+        .app-card:hover { transform: scale(1.02); background: rgba(255, 255, 255, 0.12); }
+        .app-icon { width: 60px; height: 60px; border-radius: 14px; object-fit: cover; background: #1a1a1a; border: 1px solid rgba(255,255,255,0.1); }
+        .app-info { flex: 1; }
+        .app-info h3 { font-size: 18px; color: #fff; margin-bottom: 4px; }
+        .app-info p { font-size: 12px; color: #00eeff; font-weight: bold; }
+        .download-btn { background: #00ff88; color: #000; border: none; padding: 10px 20px; border-radius: 20px; font-weight: bold; cursor: pointer; text-decoration: none; font-size: 13px; }
+
+        /* PROFILE */
+        .profile-page-bg { background: linear-gradient(135deg, #021b2f, #043d5a, #021b2f); min-height: 100vh; padding-bottom: 120px; }
+        .logout-btn { position: absolute; top: 15px; right: 15px; border: 2px solid #ff5555; color: #ff5555; padding: 8px 16px; border-radius: 25px; background: transparent; cursor: pointer; }
+        .avatar { width: 90px; height: 90px; border-radius: 50%; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; font-size: 35px; background: #b57bff; color: white; border: 3px solid #fff; }
+        
+        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; display: flex; justify-content: space-around; padding: 14px; background: #100e30; border-top: 2px solid #00eeff; z-index: 100; }
     </style>
 </head>
+
 <body>
-
-    <div id="homePage" class="page active">
-        <div class="header">
-            <div class="search-bar">🔍 <input type="text" placeholder="Search apps & games"></div>
-        </div>
-        <div class="container" id="appGrid"></div>
+<div class="container">
+    <div class="header">
+        <h1>APK STORE</h1>
+        <input id="searchInput" placeholder="Search apps..." onkeyup="searchApps()">
     </div>
 
-    <div id="profilePage" class="page">
-        <div class="profile-header">
-            <div class="avatar">👤</div>
-            <h2 id="uIdDisp">7819930087</h2>
-            <p id="uStatus" style="color: #666;">Standard Account</p>
-        </div>
-
-        <div id="devBox" class="card">
-            <h3>Developer Account</h3>
-            <p style="color:#555; font-size:14px;">Publish your own APKs for ₹499 (One-time fee).</p>
-            <button class="btn" id="payBtn" onclick="openPayment()">Activate Now</button>
-        </div>
-
-        <div id="uploadBox" class="card hidden" style="margin-top:20px;">
-            <h3 style="color:var(--p)">🚀 Developer Console</h3>
-            <input type="text" id="apkName" placeholder="App Name" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; margin-bottom:10px; box-sizing:border-box;">
-            <input type="file" id="apkFile" accept=".apk" style="margin-bottom:15px;">
-            <button class="btn" onclick="handleUpload()">Publish APK</button>
+    <div id="loginPage" class="page active-page">
+         <h2 style="color:#ffaa00; text-align:center; margin-top:20px;">Welcome to APK Store</h2>
+        <div class="form-container">
+            <h2 style="text-align:center; margin-bottom:20px;">WELCOME BACK</h2>
+            <input id="loginEmail" class="form-input" placeholder="Email Address">
+            <input id="loginPassword" type="password" class="form-input" placeholder="Password">
+            <button class="neon-btn login-btn" style="width:100%" onclick="login()">LOGIN</button>
+            <p style="margin-top:18px; text-align:center; color:#aaa">Don't have an account? <span style="color:#00eeff; cursor:pointer;" onclick="showPage('registerPage')">Sign Up</span></p>
         </div>
     </div>
 
-    <div id="payModal" class="modal">
-        <div class="modal-box">
-            <h3>Payment Confirmation</h3>
-            <p>Scan QR and send ₹499</p>
-            <img src="https://i.postimg.cc/t4mKTJPf/IMG-20260202-112444.png" class="qr-img" alt="Payment QR">
-            <input type="text" id="utr" placeholder="Enter Transaction ID (UTR)" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; box-sizing:border-box;">
-            <button class="btn" onclick="sendReq()">Submit Request</button>
-            <p onclick="closePayment()" style="color:red; margin-top:15px; font-weight:bold; cursor:pointer;">Cancel</p>
+    <div id="registerPage" class="page">
+         <h2 style="color:#ffaa00; text-align:center; margin-top:20px;">Welcome to APK Store</h2>
+        <div class="form-container">
+            <h2 style="text-align:center; margin-bottom:20px;">CREATE ACCOUNT</h2>
+            <input id="registerName" class="form-input" placeholder="Full Name">
+            <input id="registerEmail" class="form-input" placeholder="Email Address">
+            <input id="registerPassword" type="password" class="form-input" placeholder="Password">
+            <button class="neon-btn register-btn" style="width:100%" onclick="register()">REGISTER</button>
+            <p style="margin-top:18px; text-align:center; color:#aaa">Already a member? <span style="color:#00eeff; cursor:pointer;" onclick="showPage('loginPage')">Login</span></p>
         </div>
     </div>
 
-    <div class="nav">
-        <div class="nav-item active" id="nav-games" onclick="showPage('homePage', 'nav-games')">
-            <span>🎮</span><br>Games
-        </div>
-        <div class="nav-item" id="nav-apps" onclick="showPage('homePage', 'nav-apps')">
-            <span>📱</span><br>Apps
-        </div>
-        <div class="nav-item" id="nav-profile" onclick="showPage('profilePage', 'nav-profile')">
-            <span>👤</span><br>Profile
+    <div id="appsPage" class="page"> <h2 style="color:#ffaa00; margin-bottom:20px;">Featured Apps</h2> <div id="appsList"></div> </div>
+    <div id="gamesPage" class="page"> <h2 style="color:#ffaa00; margin-bottom:20px;">Popular Games</h2> <div id="gamesList"></div> </div>
+
+    <div id="profilePage" class="page profile-page-bg">
+        <button class="logout-btn" onclick="logout()">Logout</button>
+        <div style="text-align: center; padding-top: 40px;">
+            <div class="avatar" id="profileAvatar">?</div>
+            <h2 id="profileName" style="margin-bottom:5px;">User</h2>
+            <p id="profileEmail" style="color:#aaa; font-size:14px; margin-bottom:20px;">---</p>
+            
+            <div id="devStatusBox" style="margin:15px 0;">
+                Status: <span id="devStatus" style="font-weight:bold;">CHECKING...</span>
+            </div>
+
+            <div id="devCard" style="padding:0 20px;">
+                <div class="form-container" style="margin-top:10px;">
+                    <p style="margin-bottom:15px;">Want to publish your own APKs?</p>
+                    <button class="neon-btn register-btn" style="width:100%" onclick="showPage('paymentPage')">ACTIVATE DEV - ₹499</button>
+                </div>
+            </div>
+
+            <div id="uploadSection" style="display:none; padding:0 20px; text-align:left;">
+                <div class="form-container" style="margin-top:10px; max-width:100%;">
+                    <h3 style="color:#00eeff; margin-bottom:15px; text-align:center;">PUBLISH NEW APK</h3>
+                    
+                    <label style="font-size:12px; color:#aaa;">App/Game Name</label>
+                    <input id="apkName" class="form-input" placeholder="e.g. WhatsApp Pro">
+                    
+                    <label style="font-size:12px; color:#aaa;">App Icon Link (Image URL)</label>
+                    <input id="apkIcon" class="form-input" placeholder="https://image-link.com/logo.png">
+                    
+                    <label style="font-size:12px; color:#aaa;">Direct Download Link (External URL)</label>
+                    <input id="apkUrl" class="form-input" placeholder="Google Drive/Mediafire direct link">
+                    
+                    <label style="font-size:12px; color:#aaa;">Select Category</label>
+                    <select id="apkCat" class="form-input">
+                        <option value="Apps">Apps</option>
+                        <option value="Games">Games</option>
+                    </select>
+                    
+                    <button id="uploadBtn" class="neon-btn login-btn" style="width:100%; margin-top:10px;" onclick="userUploadApk()">PUBLISH NOW</button>
+                </div>
+            </div>
         </div>
     </div>
+
+    <div id="paymentPage" class="page">
+        <div class="form-container" style="text-align:center;">
+            <h2>SECURE PAYMENT</h2>
+            <div style="background:white; padding:15px; display:inline-block; border-radius:10px; margin:20px 0;">
+                <img src="https://i.postimg.cc/68njb9ML/qr.png" width="180" alt="QR Code">
+            </div>
+            <p style="font-size:14px; margin-bottom:20px; color:#ccc;">Scan & Pay ₹499 to become a Developer.</p>
+            <button class="neon-btn login-btn" style="width:100%" onclick="submitPaymentRequest()">I HAVE PAID - SUBMIT</button>
+            <p onclick="showPage('profilePage')" style="margin-top:15px; cursor:pointer; color:#ff5555;">Go Back</p>
+        </div>
+    </div>
+
+    <div class="bottom-nav" id="bottomNav" style="display:none">
+        <button class="neon-btn nav-btn" onclick="showPage('appsPage')">APPS</button>
+        <button class="neon-btn nav-btn" onclick="showPage('gamesPage')">GAMES</button>
+        <button class="neon-btn nav-btn" onclick="showPage('profilePage')">PROFILE</button>
+    </div>
+</div>
 
 <script>
-    // Firebase Config
+    // --- FIREBASE CONFIGURATION ---
     const firebaseConfig = {
-  apiKey: "AIzaSyBgrbyw1D3acLYqwU0dtFgGpaJtNPWNNZA",
-  authDomain: "apk-d2e60.firebaseapp.com",
-  databaseURL: "https://apk-d2e60-default-rtdb.firebaseio.com",
-  projectId: "apk-d2e60",
-  storageBucket: "apk-d2e60.firebasestorage.app",
-  messagingSenderId: "743284953218",
-  appId: "1:743284953218:web:23f6df76575826b43ca49b",
-  measurementId: "G-VRCL3GHJQN"
-};
+        apiKey: "AIzaSyAmvyN2cqsgsGaYCUx1U2YhwWQy-7X76fo",
+        authDomain: "solver-b2a3c.firebaseapp.com",
+        databaseURL: "https://solver-b2a3c-default-rtdb.firebaseio.com",
+        projectId: "solver-b2a3c",
+        storageBucket: "solver-b2a3c.firebasestorage.app",
+        messagingSenderId: "759476950326",
+        appId: "1:759476950326:web:5d8b354152d554ddef4f97"
+    };
     firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-    const st = firebase.storage();
+    const auth = firebase.auth();
+    const db = firebase.firestore();
 
-    let userPhone = "7819930087"; // Static for testing as per your image
-
-    // PAGE NAVIGATION LOGIC (Fixing the color issue)
-    function showPage(pageId, navId) {
-        // 1. Hide all pages
-        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-        // 2. Show selected page
-        document.getElementById(pageId).classList.add('active');
-
-        // 3. Remove active color from all nav items
-        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-        // 4. Add active color to clicked nav item
-        document.getElementById(navId).classList.add('active');
+    // --- NAVIGATION LOGIC ---
+    function showPage(id) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active-page'));
+        document.getElementById(id).classList.add('active-page');
+        document.getElementById('searchInput').style.display = (id === 'appsPage' || id === 'gamesPage') ? 'block' : 'none';
+        document.getElementById('bottomNav').style.display = (id === 'loginPage' || id === 'registerPage') ? 'none' : 'flex';
+        window.scrollTo(0,0);
     }
 
-    // Load Apps
-    function loadApps() {
-        db.ref('apps/').on('value', (snap) => {
-            const grid = document.getElementById('appGrid');
-            grid.innerHTML = "";
-            snap.forEach((child) => {
-                const app = child.val();
-                grid.innerHTML += `
-                    <div class="app-card" onclick="window.open('${app.downloadUrl}')">
-                        <div class="app-icon">${app.appName.charAt(0)}</div>
-                        <div class="app-name">${app.appName}</div>
-                    </div>`;
+    // --- AUTHENTICATION ---
+    auth.onAuthStateChanged(user => {
+        if (user) { 
+            fetchUserProfile(user); 
+            loadAppsData();
+            const current = document.querySelector('.active-page').id;
+            if(current === 'loginPage' || current === 'registerPage') showPage('appsPage');
+        } else { 
+            showPage('loginPage'); 
+        }
+    });
+
+    function login() {
+        const e = document.getElementById('loginEmail').value;
+        const p = document.getElementById('loginPassword').value;
+        if(!e || !p) return alert("Enter credentials");
+        auth.signInWithEmailAndPassword(e, p).catch(err => alert(err.message));
+    }
+
+    function register() {
+        const n = document.getElementById('registerName').value;
+        const e = document.getElementById('registerEmail').value;
+        const p = document.getElementById('registerPassword').value;
+        if(!n || !e || !p) return alert("Fill all details");
+        
+        auth.createUserWithEmailAndPassword(e, p).then(res => {
+            db.collection("users").doc(res.user.uid).set({
+                name: n, email: e, isDeveloper: false, paymentStatus: "none", joinedAt: new Date().toISOString()
             });
-        });
+        }).catch(err => alert(err.message));
     }
 
-    // Check Status
-    function checkStatus() {
-        db.ref('users/' + userPhone).on('value', (snap) => {
-            const data = snap.val();
-            if(data && data.isDeveloper) {
-                document.getElementById('uStatus').innerText = "Verified Developer ✅";
-                document.getElementById('devBox').classList.add('hidden');
-                document.getElementById('uploadBox').classList.remove('hidden');
+    function logout() { auth.signOut(); }
+
+    // --- USER PROFILE & DEV STATUS ---
+    function fetchUserProfile(user) {
+        db.collection("users").doc(user.uid).onSnapshot(doc => {
+            if (doc.exists) {
+                const data = doc.data();
+                document.getElementById('profileName').innerText = data.name;
+                document.getElementById('profileEmail').innerText = data.email;
+                document.getElementById('profileAvatar').innerText = data.name.charAt(0).toUpperCase();
+                
+                const devStatus = document.getElementById('devStatus');
+                const devCard = document.getElementById('devCard');
+                const uploadSec = document.getElementById('uploadSection');
+
+                if(data.isDeveloper) {
+                    devStatus.innerText = "ACTIVE DEVELOPER";
+                    devStatus.style.color = "#00ff88";
+                    devCard.style.display = "none";
+                    uploadSec.style.display = "block";
+                } else {
+                    if(data.paymentStatus === "pending") {
+                        devStatus.innerText = "PENDING APPROVAL";
+                        devStatus.style.color = "#ffaa00";
+                        devCard.style.display = "none";
+                    } else {
+                        devStatus.innerText = "INACTIVE";
+                        devStatus.style.color = "#ff5555";
+                        devCard.style.display = "block";
+                    }
+                    uploadSec.style.display = "none";
+                }
             }
         });
     }
 
-    function openPayment() { document.getElementById('payModal').style.display = 'flex'; }
-    function closePayment() { document.getElementById('payModal').style.display = 'none'; }
+    // --- UPLOAD LOGIC (USING DIRECT LINKS) ---
+    function userUploadApk() {
+        const name = document.getElementById('apkName').value.trim();
+        const icon = document.getElementById('apkIcon').value.trim();
+        const url = document.getElementById('apkUrl').value.trim();
+        const cat = document.getElementById('apkCat').value;
+        const btn = document.getElementById('uploadBtn');
 
-    function sendReq() {
-        const utr = document.getElementById('utr').value;
-        if(!utr) return alert("UTR bharein!");
-        db.ref('paymentRequests/' + userPhone).set({ userId: userPhone, utr: utr, status: 'pending' });
-        db.ref('users/' + userPhone).update({ paymentStatus: 'pending' });
-        alert("Request Sent!"); closePayment();
-    }
+        if(!name || !icon || !url) return alert("Please fill all fields!");
 
-    function handleUpload() {
-        const name = document.getElementById('apkName').value;
-        const file = document.getElementById('apkFile').files[0];
-        if(!name || !file) return alert("Pehle file select karein!");
-        const ref = st.ref('apks/' + Date.now() + "_" + file.name);
-        ref.put(file).then(s => s.ref.getDownloadURL()).then(url => {
-            db.ref('apps/').push({ appName: name, downloadUrl: url, developer: userPhone });
-            alert("App Uploaded!");
+        btn.disabled = true;
+        btn.innerText = "PUBLISHING...";
+
+        db.collection("apks").add({
+            name: name,
+            icon: icon,
+            url: url,
+            category: cat,
+            devName: document.getElementById('profileName').innerText,
+            uploadedBy: auth.currentUser.uid,
+            time: new Date().toISOString()
+        }).then(() => {
+            alert("App published successfully!");
+            document.getElementById('apkName').value = "";
+            document.getElementById('apkIcon').value = "";
+            document.getElementById('apkUrl').value = "";
+            btn.disabled = false;
+            btn.innerText = "PUBLISH NOW";
+            showPage('appsPage');
+        }).catch(err => {
+            alert(err.message);
+            btn.disabled = false;
         });
     }
 
-    loadApps();
-    checkStatus();
+    // --- DATA DISPLAY LOGIC ---
+    function loadAppsData() {
+        db.collection("apks").orderBy("time", "desc").onSnapshot(snapshot => {
+            const appsList = document.getElementById('appsList');
+            const gamesList = document.getElementById('gamesList');
+            appsList.innerHTML = "";
+            gamesList.innerHTML = "";
+
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                const card = `
+                    <div class="app-card">
+                        <img src="${data.icon}" class="app-icon" onerror="this.src='https://cdn-icons-png.flaticon.com/512/5132/5132144.png'">
+                        <div class="app-info">
+                            <h3>${data.name}</h3>
+                            <p>DEV: ${data.devName || 'Verified'}</p>
+                        </div>
+                        <button class="download-btn" onclick="downloadFile('${data.url}')">GET</button>
+                    </div>
+                `;
+                if(data.category === "Apps") appsList.innerHTML += card;
+                else gamesList.innerHTML += card;
+            });
+        });
+    }
+
+    // --- DOWNLOAD FUNCTION ---
+    function downloadFile(url) {
+        // Bina page redirect kiye download trigger karne ki koshish
+        const a = document.createElement('a');
+        a.href = url;
+        a.target = "_blank"; // Direct link external source se hoti hai isliye blank safe hai
+        a.setAttribute('download', '');
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    }
+
+    // --- SEARCH ---
+    function searchApps() {
+        let q = document.getElementById('searchInput').value.toLowerCase();
+        document.querySelectorAll('.app-card').forEach(card => {
+            let title = card.querySelector('h3').innerText.toLowerCase();
+            card.style.display = title.includes(q) ? "flex" : "none";
+        });
+    }
+
+    // --- PAYMENT REQUEST ---
+    function submitPaymentRequest() {
+        db.collection("users").doc(auth.currentUser.uid).update({
+            paymentStatus: "pending"
+        }).then(() => {
+            alert("Request sent to Admin!");
+            showPage('profilePage');
+        });
+    }
 </script>
+
 </body>
 </html>
+  
