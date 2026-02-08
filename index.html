@@ -75,7 +75,7 @@
             <input id="registerName" class="form-input" placeholder="Full Name">
             <input id="registerEmail" class="form-input" placeholder="Email Address">
             <input id="registerPassword" type="password" class="form-input" placeholder="Password">
-            <button class="neon-btn register-btn" style="width:100%" onclick="register()">REGISTER</button>
+            <button class="neon-btn register-btn" style="width:100%" onclick="register()">Create Account</button>
             <p style="margin-top:18px; text-align:center; color:#aaa">Already a member? <span style="color:#00eeff; cursor:pointer;" onclick="showPage('loginPage')">Login</span></p>
         </div>
     </div>
@@ -96,8 +96,9 @@
 
             <div id="devCard" style="padding:0 20px;">
                 <div class="form-container" style="margin-top:10px;">
-                          <h2>BECOME A DEVELOPER</h2>
+                  <h2 style="color:#ffaa00; text-align:center; margin-top:20px;">BECOME A DEVELOPER</h2>
                 <p>Activate developer account to upload APKs. One-time Payment ₹499 only.</p>
+                        <button class="activate-btn" onclick="showPage('paymentPage')">ACTIVATE</button>
                 </div>
             </div>
 
@@ -333,5 +334,6 @@
 </body>
 </html>
   
+
 
 
