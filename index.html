@@ -39,6 +39,14 @@
         .activate-pink-btn { background: transparent; color: #FF00FF; border: 3px solid #FF00FF; border-radius: 50px; padding: 12px 0; width: 90%; font-size: 18px; font-weight: bold; cursor: pointer; text-transform: uppercase; box-shadow: 0 0 15px rgba(255, 0, 255, 0.5), inset 0 0 5px rgba(255, 0, 255, 0.3); transition: 0.3s ease-in-out; }
         .activate-pink-btn:hover { background: #FF00FF; color: white; box-shadow: 0 0 25px rgba(255, 0, 255, 0.8); }
 
+        /* MESSAGE BOX SYSTEM */
+        #userMessageBox { margin-top: 20px; padding: 0 15px; }
+        .msg-container { background: rgba(0, 238, 255, 0.05); border: 1px solid #00eeff; border-radius: 15px; padding: 15px; text-align: left; animation: slideUp 0.5s ease; }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .msg-item { background: rgba(255,255,255,0.05); padding: 10px; border-radius: 10px; margin-bottom: 8px; border-left: 3px solid #ff00cc; }
+        .msg-text { font-size: 14px; color: #fff; line-height: 1.4; }
+        .msg-time { font-size: 10px; color: #aaa; margin-top: 5px; text-align: right; }
+
         .app-card { background: rgba(255, 255, 255, 0.08); padding: 15px; border-radius: 15px; margin-bottom: 15px; display: flex; align-items: center; gap: 15px; border-left: 5px solid #00eeff; transition: 0.3s; }
         .app-card:hover { transform: scale(1.02); background: rgba(255, 255, 255, 0.12); }
         .app-icon { width: 60px; height: 60px; border-radius: 14px; object-fit: cover; background: #1a1a1a; border: 1px solid rgba(255,255,255,0.1); }
@@ -107,6 +115,17 @@
                 </div>
             </div>
 
+            <div id="userMessageBox">
+                <div class="msg-container">
+                    <h4 style="color:#00eeff; font-size:14px; margin-bottom:10px; border-bottom:1px solid rgba(0,238,255,0.2); padding-bottom:5px;">
+                        ADMIN MESSAGES
+                    </h4>
+                    <div id="messagesDisplay">
+                        <p style="font-size:12px; color:#666;">No new messages from admin.</p>
+                    </div>
+                </div>
+            </div>
+
             <div id="uploadSection" style="display:none; padding:0 20px; text-align:left;">
                 <div class="form-container" style="margin-top:10px; max-width:100%;">
                     <h3 style="color:#00eeff; margin-bottom:15px; text-align:center;">PUBLISH NEW APK</h3>
@@ -134,10 +153,8 @@
                 <img src="https://i.postimg.cc/68njb9ML/qr.png" width="180" alt="QR Code">
             </div>
             <p style="font-size:14px; margin-bottom:15px; color:#ccc;">Scan & Pay <b>₹499</b> to become a Developer.</p>
-            
             <input id="payUtr" class="form-input" placeholder="Enter UTR / Transaction ID" style="border-color: #ff00cc;">
             <input id="payEmail" class="form-input" placeholder="Confirm Your Registered Email" style="border-color: #ff00cc;">
-            
             <button class="neon-btn login-btn" style="width:100%; margin-top: 10px;" onclick="submitPaymentRequest()">SUBMIT DETAILS</button>
             <p onclick="showPage('profilePage')" style="margin-top:15px; cursor:pointer; color:#ff5555; font-size: 14px;">Go Back</p>
         </div>
@@ -175,6 +192,7 @@
     auth.onAuthStateChanged(user => {
         if (user) { 
             fetchUserProfile(user); 
+            listenForMessages(user.uid); 
             loadAppsData();
             const current = document.querySelector('.active-page').id;
             if(current === 'loginPage' || current === 'registerPage') showPage('appsPage');
@@ -182,6 +200,42 @@
             showPage('loginPage'); 
         }
     });
+
+    // --- UPDATED: LISTEN FOR MESSAGES (LAST 48 HOURS ONLY) ---
+    function listenForMessages(userId) {
+        // Current time se 48 hours pehle ka time calculate karna
+        const cutoff = new Date();
+        cutoff.setHours(cutoff.getHours() - 48);
+        const cutoffISO = cutoff.toISOString();
+
+        db.collection("messages")
+          .where("toUser", "==", userId)
+          .where("time", ">=", cutoffISO) // Only messages sent in the last 48 hours
+          .orderBy("time", "desc")
+          .onSnapshot(snapshot => {
+            const msgDisplay = document.getElementById('messagesDisplay');
+            if (snapshot.empty) {
+                msgDisplay.innerHTML = `<p style="font-size:12px; color:#666;">No recent messages from admin.</p>`;
+                return;
+            }
+            
+            let html = "";
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                const time = new Date(data.time).toLocaleString();
+                html += `
+                    <div class="msg-item">
+                        <p class="msg-text">${data.message}</p>
+                        <p class="msg-time">${time}</p>
+                    </div>
+                `;
+            });
+            msgDisplay.innerHTML = html;
+        }, err => {
+            // Agar Index mangta hai to console me link dikhega
+            console.error("Firestore Error:", err);
+        });
+    }
 
     function login() {
         const e = document.getElementById('loginEmail').value;
@@ -280,14 +334,10 @@
         });
     }
 
-    // --- UPDATED PAYMENT SUBMIT FUNCTION ---
     function submitPaymentRequest() {
         const utr = document.getElementById('payUtr').value.trim();
         const email = document.getElementById('payEmail').value.trim();
-
-        if(!utr || !email) {
-            return alert("Please enter both UTR and Email Address!");
-        }
+        if(!utr || !email) return alert("Please enter both UTR and Email Address!");
 
         db.collection("users").doc(auth.currentUser.uid).update({ 
             paymentStatus: "pending",
