@@ -32,50 +32,12 @@
         .register-btn { border-color: #ff00cc; color: #ff00cc; box-shadow: 0 0 8px #ff00cc; }
         .nav-btn { border-color: #ffaa00; color: #ffaa00; width: 30%; font-size: 12px; }
 
-        /* --- UPDATED DEV CARD & PINK BUTTON --- */
-        .dev-card-new {
-            margin: 20px auto;
-            background: rgba(255, 255, 255, 0.05);
-            padding: 30px 20px;
-            border-radius: 25px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 0 30px rgba(255, 170, 0, 0.15);
-            text-align: center;
-            max-width: 350px;
-        }
-        .dev-card-new h2 {
-            color: #ffaa00;
-            text-shadow: 0 0 10px #ffaa00;
-            font-size: 22px;
-            margin-bottom: 10px;
-            text-transform: uppercase;
-        }
-        .dev-card-new p {
-            font-size: 15px;
-            color: #e0e0e0;
-            line-height: 1.5;
-            margin-bottom: 25px;
-        }
-        .activate-pink-btn {
-            background: transparent;
-            color: #FF00FF;
-            border: 3px solid #FF00FF;
-            border-radius: 50px;
-            padding: 12px 0;
-            width: 90%;
-            font-size: 18px;
-            font-weight: bold;
-            cursor: pointer;
-            text-transform: uppercase;
-            box-shadow: 0 0 15px rgba(255, 0, 255, 0.5), inset 0 0 5px rgba(255, 0, 255, 0.3);
-            transition: 0.3s ease-in-out;
-        }
-        .activate-pink-btn:hover {
-            background: #FF00FF;
-            color: white;
-            box-shadow: 0 0 25px rgba(255, 0, 255, 0.8);
-        }
-        /* -------------------------------------- */
+        .dev-card-new { margin: 20px auto; background: rgba(255, 255, 255, 0.05); padding: 30px 20px; border-radius: 25px; border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 0 30px rgba(255, 170, 0, 0.15); text-align: center; max-width: 350px; }
+        .dev-card-new h2 { color: #ffaa00; text-shadow: 0 0 10px #ffaa00; font-size: 22px; margin-bottom: 10px; text-transform: uppercase; }
+        .dev-card-new p { font-size: 15px; color: #e0e0e0; line-height: 1.5; margin-bottom: 25px; }
+        
+        .activate-pink-btn { background: transparent; color: #FF00FF; border: 3px solid #FF00FF; border-radius: 50px; padding: 12px 0; width: 90%; font-size: 18px; font-weight: bold; cursor: pointer; text-transform: uppercase; box-shadow: 0 0 15px rgba(255, 0, 255, 0.5), inset 0 0 5px rgba(255, 0, 255, 0.3); transition: 0.3s ease-in-out; }
+        .activate-pink-btn:hover { background: #FF00FF; color: white; box-shadow: 0 0 25px rgba(255, 0, 255, 0.8); }
 
         .app-card { background: rgba(255, 255, 255, 0.08); padding: 15px; border-radius: 15px; margin-bottom: 15px; display: flex; align-items: center; gap: 15px; border-left: 5px solid #00eeff; transition: 0.3s; }
         .app-card:hover { transform: scale(1.02); background: rgba(255, 255, 255, 0.12); }
@@ -167,13 +129,17 @@
 
     <div id="paymentPage" class="page">
         <div class="form-container" style="text-align:center;">
-            <h2>SECURE PAYMENT</h2>
-            <div style="background:white; padding:15px; display:inline-block; border-radius:10px; margin:20px 0;">
+            <h2 style="color:#ffaa00;">SECURE PAYMENT</h2>
+            <div style="background:white; padding:15px; display:inline-block; border-radius:10px; margin:20px 0; border: 3px solid #00eeff;">
                 <img src="https://i.postimg.cc/68njb9ML/qr.png" width="180" alt="QR Code">
             </div>
-            <p style="font-size:14px; margin-bottom:20px; color:#ccc;">Scan & Pay ₹499 to become a Developer.</p>
-            <button class="neon-btn login-btn" style="width:100%" onclick="submitPaymentRequest()">SUBMIT</button>
-            <p onclick="showPage('profilePage')" style="margin-top:15px; cursor:pointer; color:#ff5555;">Go Back</p>
+            <p style="font-size:14px; margin-bottom:15px; color:#ccc;">Scan & Pay <b>₹499</b> to become a Developer.</p>
+            
+            <input id="payUtr" class="form-input" placeholder="Enter UTR / Transaction ID" style="border-color: #ff00cc;">
+            <input id="payEmail" class="form-input" placeholder="Confirm Your Registered Email" style="border-color: #ff00cc;">
+            
+            <button class="neon-btn login-btn" style="width:100%; margin-top: 10px;" onclick="submitPaymentRequest()">SUBMIT DETAILS</button>
+            <p onclick="showPage('profilePage')" style="margin-top:15px; cursor:pointer; color:#ff5555; font-size: 14px;">Go Back</p>
         </div>
     </div>
 
@@ -185,7 +151,6 @@
 </div>
 
 <script>
-    // --- FIREBASE & LOGIC (Unchanged) ---
     const firebaseConfig = {
         apiKey: "AIzaSyAmvyN2cqsgsGaYCUx1U2YhwWQy-7X76fo",
         authDomain: "solver-b2a3c.firebaseapp.com",
@@ -315,9 +280,26 @@
         });
     }
 
+    // --- UPDATED PAYMENT SUBMIT FUNCTION ---
     function submitPaymentRequest() {
-        db.collection("users").doc(auth.currentUser.uid).update({ paymentStatus: "pending" })
-        .then(() => { alert("Request sent!"); showPage('profilePage'); });
+        const utr = document.getElementById('payUtr').value.trim();
+        const email = document.getElementById('payEmail').value.trim();
+
+        if(!utr || !email) {
+            return alert("Please enter both UTR and Email Address!");
+        }
+
+        db.collection("users").doc(auth.currentUser.uid).update({ 
+            paymentStatus: "pending",
+            submittedUtr: utr,
+            submittedEmail: email,
+            requestTime: new Date().toISOString()
+        })
+        .then(() => { 
+            alert("Payment details submitted successfully! Admin will verify it soon."); 
+            showPage('profilePage'); 
+        })
+        .catch(err => alert("Error: " + err.message));
     }
 </script>
 </body>
